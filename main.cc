@@ -16,19 +16,20 @@ int id_gen(deque <pair<int, int>> buffer);
 
 struct producer_data {
   int semid;
-  int* id;
-  deque <pair<int, int>>* buffer;
   int jobs_num;
+  deque <pair<int, int>>* buffer;
+  int* id;
 };
 
 struct consumer_data{
   int semid;
-  int* id;
   deque <pair<int, int>>* buffer;
+  int* id;
 };
 
 int main (int argc, char **argv)
 {
+  deque <pair<int, int>> buffer;
   int queue_size = stoi(argv[1]);
   int jobs_num = stoi(argv[2]);
   int num_producers = stoi(argv[3]);
@@ -74,7 +75,7 @@ void *producer (void *parameter)
   int jobs_num = params.jobs_num;
   deque <pair<int, int>> &buffer = *(params.buffer);
   int &id = *(params.id);
-  int job_duration, job_id, thread_id, queue_size;
+  int job_duration, job_id, thread_id;
 
   sem_wait (semid, IDS);
   thread_id = id++;
@@ -101,7 +102,6 @@ void *producer (void *parameter)
     sem_wait (semid, MUTEX);
     job_id = id_gen(buffer);
     buffer.push_back({job_id, job_duration});
-    queue_size = buffer.size();
     sem_signal (semid, MUTEX);
     sem_signal (semid, EMPTY);
 
@@ -118,7 +118,7 @@ void *consumer (void *parameter)
   int semid = params.semid;
   deque <pair<int, int>> &buffer = *(params.buffer);
   int &id = *(params.id);
-  int thread_id, queue_size;
+  int thread_id;
 
   sem_wait(semid, IDS);
   thread_id = id++;
@@ -135,7 +135,6 @@ void *consumer (void *parameter)
     sem_wait(semid, MUTEX);
     pair<int, int> job = buffer.front();
     buffer.pop_front();
-    queue_size = buffer.size();
     sem_signal(semid, MUTEX);
     sem_signal(semid, SPACE);
     sem_wait (semid, STDOUT);
